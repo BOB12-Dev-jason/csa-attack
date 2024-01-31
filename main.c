@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "deauth-attack.h"
+#include "csa-attack.h"
 
 void usage();
 
@@ -14,17 +14,32 @@ int main(int argc, char* argv[]) {
     int res;
 
     switch (argc) {
-    case 3:
-        puts("case 3");
-        break;
-    
-    default:
-        usage();
-        res = -1;
-        break;
-    }
+        case 3: // csa-attack <interface> <ap mac>
+            interface = argv[1];
+            ap_mac = argv[2];
+            if (strlen(ap_mac) != 17) {
+                usage();
+                return -1;
+            }
+            res = csa_attack(interface, ap_mac, NULL);
+            break;
 
+        case 4: // csa-attack <interface> <ap mac> <station mac>
+            interface = argv[1];
+            ap_mac = argv[2];
+            station_mac = argv[3];
+            if ((strlen(ap_mac) != 17) || (strlen(station_mac) != 17)) {
+                usage();
+                return -1;
+            }
+            res = csa_attack(interface, ap_mac, station_mac);
+            break;
     
+        default:
+            usage();
+            res = -1;
+            break;
+    }
 
     return res;
     
